@@ -5,15 +5,25 @@ import { v4 as uuid } from 'uuid'
 
 const App = () => {
   const [objectList, setObjectList] = useState([])
+  const [error, setError] = useState(false)
 
   const nameValue = useRef('')
   const valueValue = useRef('')
 
   const handleClick = () => {
-    setObjectList((list) => [
-      ...list,
-      { key: uuid(), name: nameValue.current, value: valueValue.current },
-    ])
+    if (nameValue.current.value && Number(valueValue.current.value)) {
+      setObjectList((list) => [
+        ...list,
+        {
+          key: uuid(),
+          name: nameValue.current.value,
+          value: valueValue.current.value,
+        },
+      ])
+      setError('')
+    } else {
+      setError('Invalid input')
+    }
   }
 
   return (
@@ -22,26 +32,35 @@ const App = () => {
         <Input>
           <p>Name: </p>
           <Field
+            ref={nameValue}
             onChange={(event) => {
-              nameValue.current = event.target.value
+              nameValue.current.value = event.target.value
+            }}
+            onFocus={() => {
+              setError(false)
             }}
           />
         </Input>
         <Input>
           <p>Value: </p>
           <Field
+            ref={valueValue}
             onChange={(event) => {
-              valueValue.current = event.target.value
+              valueValue.current.value = event.target.value
+            }}
+            onFocus={() => {
+              setError(false)
             }}
           />
         </Input>
         <Button type='button' onClick={handleClick}>
           Submit!
         </Button>
+        {error && <p>{error}</p>}
       </Form>
       <Cardlist>
         {objectList.map((item) => (
-          <Card key={objectList.id}>
+          <Card key={objectList.key}>
             <Items>
               <p>{item.name} </p>
             </Items>
