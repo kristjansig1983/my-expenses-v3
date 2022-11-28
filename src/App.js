@@ -1,29 +1,42 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import styled, { css } from 'styled-components'
 import { v4 as uuid } from 'uuid'
+import { postExpenses, getExpenses, deleteExpenses } from './api'
 
-const App = () => {
-  const [objectList, setObjectList] = useState([])
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const Expense = () => {
+  const [data, setData] = useState()
   const [error, setError] = useState(false)
 
-  const nameValue = useRef('')
-  const valueValue = useRef('')
-
-  const handleClick = () => {
-    if (nameValue.current.value && Number(valueValue.current.value)) {
-      setObjectList((list) => [
-        ...list,
-        {
-          key: uuid(),
-          name: nameValue.current.value,
-          value: valueValue.current.value,
-        },
-      ])
+  const handleGetExpenses = async () => {
+    const body = await getExpenses()
+    if (body) {
+      setData(body.map((b) => b.id))
       setError('')
     } else {
       setError('Invalid input')
     }
+  }
+
+  useEffect(() => {
+    handleGetExpenses
+  }, [])
+
+  const [name, setName] = useState('')
+  const [cost, setCost] = useState(0)
+  const [id, setId] = useState('')
+
+  const handleSubmit = () => {
+    postExpenses({
+      name,
+      cost,
+    })
+  }
+
+  const handleDelete = async () => {
+    const f = await deleteExpenses(id)
   }
 
   return (
@@ -32,10 +45,10 @@ const App = () => {
         <Input>
           <p>Name: </p>
           <Field
-            ref={nameValue}
-            onChange={(event) => {
-              nameValue.current.value = event.target.value
+            onChange={(e) => {
+              setName(e.target.value)
             }}
+            value={name}
             onFocus={() => {
               setError(false)
             }}
@@ -44,50 +57,31 @@ const App = () => {
         <Input>
           <p>Value: </p>
           <Field
-            ref={valueValue}
-            onChange={(event) => {
-              valueValue.current.value = event.target.value
+            onChange={(e) => {
+              setCost(e.target.value)
             }}
+            value={cost}
             onFocus={() => {
               setError(false)
             }}
           />
         </Input>
-        <Button type='button' onClick={handleClick}>
+        <Button type='button' onClick={handleSubmit}>
           Submit!
         </Button>
         {error && <p>{error}</p>}
+        <Button type='button' onClick={handleGetExpenses}>
+          Get Expenses!
+        </Button>
+        <div>{data ? <p>{JSON.stringify(data)}</p> : <p>Loading...</p>}</div>
       </Form>
       <Cardlist>
-        {objectList.map((item) => (
-          <Card key={objectList.key}>
-            <Items>
-              <p>{item.name} </p>
-            </Items>
-            <Items>
-              <p>{item.value}</p>
-            </Items>
-            <Delete
-              type='button'
-              onClick={() =>
-                setObjectList((li) => li.filter((i) => i.key !== item.key))
-              }
-            >
-              Delete
-            </Delete>
-          </Card>
-        ))}
+        <Card>
+          <Delete type='button' onClick={handleDelete}>
+            Delete
+          </Delete>
+        </Card>
       </Cardlist>
-      <Items>
-        <p>Sum:</p>
-        <p>
-          {objectList.reduce(
-            (previousValue, currentValue) =>
-              previousValue + Number(currentValue.value),
-            0
-          )}
-        </p>
-      </Items>
     </Page>
   )
 }
@@ -162,4 +156,4 @@ const Cardlist = styled.div`
   display: flex;
   flex-direction: column;
 `
-export default App
+export default Expense
